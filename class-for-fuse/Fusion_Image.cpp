@@ -7,7 +7,11 @@ FIMG::Fusion_Image::Fusion_Image()
 
 FIMG::Fusion_Image::~Fusion_Image()
 {
-
+	mask_Pyr_.clear();
+	front_Gauss_Pyr_.clear();
+	front_Laplace_Pyr_.clear();
+	back_Gauss_Pyr_.clear();
+	back_Laplace_Pyr_.clear();
 }
 
 int FIMG::Fusion_Image::init_parameter(const FIMG::Fusion_Image_Param& parameter)
@@ -35,21 +39,24 @@ int FIMG::Fusion_Image::init_fusion(const cv::Mat& img_std)
 		param_.iPyramid_level -= 1;
 		temp_int = pow(2, param_.iPyramid_level);
 	}
+	feature_.SetParam(param_);//Obtain the maximum number of pyramid layers without changing the size
 
-	feature_.SetParam(param_);
-
+	
 	cv::Mat mask = cv::Mat::zeros(img_std.size(), CV_32FC1);
 	mask(cv::Range::all(), cv::Range::all()) = param_.dAlpha;//多尺度线性融合
+	
+	
 	if (img_std.channels() == 3)
 	{ 
-		cvtColor(mask, mask, cv::COLOR_GRAY2BGR); 
+		cvtColor(mask, mask, cv::COLOR_GRAY2BGR);
 	}
+
 	feature_.Gauss_Pyr(mask, mask_Pyr_);
 
 	return true;
 }
 
-int FIMG::Fusion_Image::fusion_image(const cv::Mat& img_front, const cv::Mat& img_back, cv::Mat& img_dst)
+int FIMG::Fusion_Image::fusion_image(const cv::Mat& img_front, const cv::Mat& img_back, cv::Mat& img_dst, cv::InputArray mask)
 {
 	front_Gauss_Pyr_.clear();
 	front_Laplace_Pyr_.clear();

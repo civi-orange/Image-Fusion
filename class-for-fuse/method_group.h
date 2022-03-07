@@ -50,7 +50,7 @@ public:
 	int Adjust_contrast_brightness(cv::Mat& src, cv::Mat& dst, double alpha, double beta);
 
 	//仿射变换
-	int Affine_trans_base_matrix(cv::Mat& src, cv::Point2f& trans_center, cv::Mat& dst, affine_trans_params& param, bool fullDisplayImg);
+	int Affine_trans_base_matrix(cv::Mat& src, cv::Point2f trans_center, cv::Mat& dst, affine_trans_params& param, bool fullDisplayImg = false);
 
 	//分块直方图均衡化
 	void calc_clache_hist(cv::Mat& src, cv::Mat& dst, double dVlaue = 40.0, cv::Size img_block = cv::Size(8, 8));
@@ -64,9 +64,6 @@ public:
 	//显著特征图提取
 	void SalientRegionDetectionBasedonLC(cv::Mat& src, cv::Mat& dst);
 
-	//获取红外热量高的区域
-	int Get_Infrared_target_region(cv::Mat& src, cv::Mat& dst);
-
 	//区域自适应生长分割
 	void RegionGrow(cv::Mat src, cv::Mat& matDst);
 
@@ -75,6 +72,10 @@ public:
 
 	//文件类型 列表获取，仅适用于Windows,Linux 请注释
 	void listFiles(string dir, vector<string>& files, string str_img_type);
+
+	cv::Mat All_Images_inWindow(vector<cv::Mat> vct_img);
+
+	void saveIndex2Txt(FIMG::fusion_image_index, string path = "");
 
 public:
 

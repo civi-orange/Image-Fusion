@@ -10,13 +10,15 @@
 
 #include <direct.h>
 #include <io.h>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include "time.h"
 #include <stdio.h>
 
 using std::vector;
 using std::string;
+
+#pragma warning(disable:4996) //获取时间函数失效警告去除
 
 namespace FIMG
 {
@@ -61,7 +63,98 @@ struct Fusion_Image_Param
 	affine_trans_params affine_param;
 	fusion_image_index  image_indictor;
 
+	//相机标定单应性矩阵
+	cv::Mat homo_mat_LFuse = (cv::Mat_<double>(3, 3) << 1, 0, 1, 0, 1, 1, 0, 0, 1); //左微光+红外	
+	cv::Mat homo_mat_RFuse = (cv::Mat_<double>(3, 3) << 1, 0, 1, 0, 1, 1, 0, 0, 1); //右微光+红外	
+	cv::Mat homo_mat_LRVision = (cv::Mat_<double>(3, 3) << 1, 0, 1, 0, 1, 1, 0, 0, 1); //左右微光立体视觉参数矩阵
+
 };
 
+
+}
+
+namespace SMAG //Stereo matching algorithm group
+{
+
+	struct BM_param
+	{
+		int preFiletertype = cv::StereoBM::PREFILTER_NORMALIZED_RESPONSE;// PREFILTER_NORMALIZED_RESPONSE:0 or PREFILTER_XSOBEL:1
+		int preFilterSize = 9;
+		int preFileterCap = 31;
+		int textureThreshold = 10;
+		int UniquenessRatio = 7;
+		int speckleWindowSize = 20;
+		int smallblockSize = 3;
+		cv::Rect roi_left, roi_right;
+
+
+		int blockSize = 5; //必须为＞1的奇数 一般取 5-21
+		int minDisparity = 0; //最小视差
+		int numDisparities_ratio = 10;// numDisparities = 16 * ratio 视差范围*倍率
+		int SpeckleRange = 32;//
+		int disp12MaxDiff = 1;//
+		
+		BM_param clone()
+		{
+			BM_param temp;
+
+			temp.blockSize = blockSize;
+			temp.minDisparity = minDisparity;
+			temp.numDisparities_ratio = numDisparities_ratio;
+			temp.SpeckleRange = SpeckleRange;
+			temp.disp12MaxDiff = disp12MaxDiff;
+
+			temp.preFiletertype = preFiletertype;
+			temp.preFilterSize = preFilterSize;
+			temp.preFileterCap = preFileterCap;
+			temp.textureThreshold = textureThreshold;
+			temp.UniquenessRatio = UniquenessRatio;
+			temp.speckleWindowSize = speckleWindowSize;
+			temp.smallblockSize = smallblockSize;
+			temp.roi_left = roi_left;
+			temp.roi_right = roi_right;
+
+			return temp;
+		}
+
+	};
+
+	struct SGBM_param
+	{
+		int mode = cv::StereoSGBM::MODE_SGBM;// MODE_SGBM=0, MODE_HH=1, MODE_SGBM_3WAY=2, MODE_HH4=3
+		int preFileterCap = 31;
+		int UniquenessRatio = 7;
+		int P1 = 600; //P1 = 8 * left.channels() * blockSize* blockSize 平滑系数
+		int P2 = 2400;
+
+
+		int blockSize = 5; //必须为＞1的奇数 一般取 5-21
+		int minDisparity = 0;
+		int numDisparities_ratio = 10;// numDisparities = 16 * ratio
+		int SpeckleRange = 32;
+		int speckleWindowSize = 100;
+		int disp12MaxDiff = 1;
+
+		SGBM_param clone()
+		{
+			SGBM_param temp;
+
+			temp.blockSize = blockSize;
+			temp.minDisparity = minDisparity;
+			temp.numDisparities_ratio = numDisparities_ratio;
+			temp.SpeckleRange = SpeckleRange;
+			temp.speckleWindowSize = speckleWindowSize;
+			temp.disp12MaxDiff = disp12MaxDiff;
+
+			temp.mode = mode;
+			temp.preFileterCap = preFileterCap;
+			temp.P1 = P1;
+			temp.P2 = P2;
+			temp.UniquenessRatio = UniquenessRatio;
+
+			return temp;
+		}
+
+	};
 
 }

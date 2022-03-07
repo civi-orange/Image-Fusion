@@ -34,7 +34,7 @@ public:
 
 	int init_fusion(const cv::Mat& img_std);
 
-	int fusion_image(const cv::Mat& img_front, const cv::Mat& img_back, cv::Mat& img_dst);
+	int fusion_image(const cv::Mat& img_front, const cv::Mat& img_back, cv::Mat& img_dst, cv::InputArray mask = cv::noArray());
 
 	int Get_Fusion_indicator(cv::Mat img_front, cv::Mat img_back, cv::Mat img_fuse, fusion_image_index& fuse_indicator);
 

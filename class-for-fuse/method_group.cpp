@@ -1,5 +1,5 @@
 #include "method_group.h"
-
+using namespace std;
 FIMG::method_group::method_group()
 {
 
@@ -317,15 +317,26 @@ int FIMG::method_group::Max_Entropy(cv::Mat& src, cv::Mat& dst, int thresh /*= 0
 
 	//阈值处理
 	src.copyTo(dst);
-	for (int i = 0; i < r; ++i) {
-		uchar* ptr = dst.ptr<uchar>(i);
-		for (int j = 0; j < c; ++j) {
-			if (ptr[j] > thresh)
-				ptr[j] = 255;
-			else
-				ptr[j] = 0;
+
+	//应用于无目标或者目标渐隐的情况（但针对红外目标亮背景下，失效
+	if (thresh < 100)
+	{
+		threshold(dst, dst, 100, 255, cv::THRESH_BINARY);
+	}
+	else
+	{
+		for (int i = 0; i < r; ++i) {
+			uchar* ptr = dst.ptr<uchar>(i);
+			for (int j = 0; j < c; ++j) {
+				if (ptr[j] > thresh)
+					ptr[j] = 255;
+				else
+					ptr[j] = 0;
+			}
 		}
 	}
+
+
 	return thresh;
 }
 
@@ -336,6 +347,7 @@ int FIMG::method_group::Adjust_gamma(cv::Mat& src, cv::Mat& dst, float gamma /*=
 		auto mean_val = mean(src);
 		gamma = log10(0.5) / log10(mean_val[0] / 255);
 	}
+
 	float table[256];
 	for (int i = 0; i < 256; i++)
 	{
@@ -403,7 +415,7 @@ int FIMG::method_group::Adjust_contrast_brightness(cv::Mat& src, cv::Mat& dst, d
 	return true;
 }
 
-int FIMG::method_group::Affine_trans_base_matrix(cv::Mat& src, cv::Point2f& trans_center, cv::Mat& dst, affine_trans_params& param, bool fullDisplayImg)
+int FIMG::method_group::Affine_trans_base_matrix(cv::Mat& src, cv::Point2f trans_center, cv::Mat& dst, affine_trans_params& param, bool fullDisplayImg)
 {
 	if (src.empty()) { return false; }
 
@@ -533,36 +545,7 @@ void FIMG::method_group::SalientRegionDetectionBasedonLC(cv::Mat& src, cv::Mat& 
 	}
 }
 
-int FIMG::method_group::Get_Infrared_target_region(cv::Mat& src, cv::Mat& dst)
-{
-	cv::Mat gray, gamma, gray_median;
-	if (src.empty()) { return false; }
-	else
-	{
-		if (src.channels() > 1)
-		{
-			cvtColor(src, gray, cv::COLOR_BGR2GRAY);
-		}
-		else
-		{
-			src.copyTo(gray);
-		}
-	}
-	if (mean(gray)[0] > 100)
-	{
-		Adjust_gamma(gray, gamma, 1.8);
-	}
-	else
-	{
-		gray.copyTo(gamma);
-	}
-	//medianBlur(gamma, gray_median, 3);
-
-	Max_Entropy(gamma, dst, 0, 7);
-
-	return true;
-}
-
+//区域生长分割算法
 void FIMG::method_group::RegionGrow(cv::Mat src, cv::Mat& matDst)
 {
 	int DIR[8][2] = { { -1, -1 },{ 0, -1 },{ 1, -1 },{ 1, 0 },{ 1, 1 },{ 0, 1 },{ -1, 1 },{ -1, 0 } };//生长方向顺序数据//loop
@@ -641,4 +624,51 @@ void FIMG::method_group::listFiles(string dir, vector<string>& files, string str
 		//files.push_back(filename);
 	} while (_findnext(handle, &findData) == 0);
 	_findclose(handle);    // 关闭搜索句柄
+}
+
+cv::Mat FIMG::method_group::All_Images_inWindow(vector<cv::Mat> vct_img)
+{
+	int w = vct_img[0].cols;
+	int h = vct_img[0].rows;
+	cv::Mat result = cv::Mat::zeros(cv::Size(2 * w, 2 * h), vct_img[0].type());
+	cv::Rect box(0, 0, w, h);
+	for (int i = 0; i < 4; i++) {
+		int row = i / 2;
+		int col = i % 2;
+		box.x = w * col;
+		box.y = h * row;
+		vct_img[i].copyTo(result(box));
+	}
+	return result;
+}
+
+void FIMG::method_group::saveIndex2Txt(FIMG::fusion_image_index fuse_indicator, string path /*= ""*/)
+{
+	string file_path;
+	if (path.empty())
+	{
+		file_path = getCurFilePath();//获取当前文件绝对路径
+	}
+	else
+	{
+		file_path = path;
+	}
+	time_t t = time(0);
+	char ch[64];
+	strftime(ch, sizeof(ch), "%Y-%m-%d-%H-%M", localtime(&t));
+	std::ofstream test_value(file_path +"/saveinfo/" + ch + ".txt", std::ios::app | std::ios::out);
+	test_value << " k_fuse  " << "    w_fuse  " << endl;
+	test_value << fuse_indicator.fusion_EN  << std::endl;
+	test_value << fuse_indicator.fusion_MI  << std::endl;
+	test_value << fuse_indicator.fusion_meanGrad  << std::endl;
+	test_value << fuse_indicator.fusion_SSIM_irf  << std::endl;
+	test_value << fuse_indicator.fusion_SSIM_visf << std::endl;
+	test_value << fuse_indicator.fusion_SF << std::endl;
+	test_value << fuse_indicator.fusion_SD << std::endl;
+	test_value << fuse_indicator.fusion_CC_irf << std::endl;
+	test_value << fuse_indicator.fusion_CC_visf << std::endl;
+	test_value << fuse_indicator.fusion_VIF << std::endl;
+	test_value << fuse_indicator.fusion_Qab_f << std::endl;
+	test_value << "------------------ok--------------------" << endl;
+	test_value.close();
 }
