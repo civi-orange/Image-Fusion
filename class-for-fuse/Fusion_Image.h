@@ -28,7 +28,7 @@ public:
 
 	Fusion_Image();
 
-	~Fusion_Image();
+	virtual ~Fusion_Image();
 
 	int init_parameter(const FIMG::Fusion_Image_Param &parameter);
 
@@ -39,12 +39,18 @@ public:
 	int Get_Fusion_indicator(cv::Mat img_front, cv::Mat img_back, cv::Mat img_fuse, fusion_image_index& fuse_indicator);
 
 
+	//
+	int GFF_Fusion(const cv::Mat& img_front, const cv::Mat& img_back, cv::Mat& img_dst);
 
+	//laplace filter +	//abs
+	int LaplacianOfTheImage(const cv::Mat& src, cv::Mat& dst, bool is_abs = true);	
 
 private:
 
 	int laplace_pyr_fusion(FIMG::Pyr_FEAT& Img_lp_front, FIMG::Pyr_FEAT& Img_lp_back, FIMG::Pyr_FEAT& mask_gau, FIMG::Pyr_FEAT& blend_lp);
-
+		
+	//获取融合权重
+	int get_fusion_weights(const cv::Mat& src_front, const cv::Mat& src_back);
 
 
 private:
@@ -62,6 +68,10 @@ private:
 	Pyr_FEAT back_Laplace_Pyr_;
 
 	method_group method_;
+
+	//不同参数的引导滤波
+	FIMG::Pyr_FEAT vct_guid_45;
+	vector<cv::Mat> vct_guid_7;
 
 };
 

@@ -8,6 +8,8 @@
 #include <opencv2/features2d.hpp>
 #include <xfeatures2d/nonfree.hpp>
 
+#include "opencv2/ximgproc.hpp" //Òýµ¼ÂË²¨
+
 #include <direct.h>
 #include <io.h>
 #include <fstream>

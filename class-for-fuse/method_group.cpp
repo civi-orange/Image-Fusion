@@ -200,6 +200,8 @@ void FIMG::method_group::hist_graph(cv::Mat hist)
 	//cv::waitKey();
 }
 
+
+//r: 平滑滤波半径; eps: 轮廓模糊化程度
 cv::Mat FIMG::method_group::GuidedFilter(cv::Mat& input, cv::Mat& guidImg, int r, double eps)
 {
 	int wsize = 2 * r + 1;
@@ -264,8 +266,9 @@ cv::Mat FIMG::method_group::GuidedFilter(cv::Mat& input, cv::Mat& guidImg, int r
 	return out;
 }
 
-int FIMG::method_group::Max_Entropy(cv::Mat& src, cv::Mat& dst, int thresh /*= 0*/, int p /*= 10*/)
+int FIMG::method_group::Max_Entropy(cv::Mat& src, cv::Mat& dst, int p /*= 10*/, int filter_size /* = 3*/)
 {
+	int thresh = 0;
 	const int Grayscale = 256;
 	int Graynum[Grayscale] = { 0 };
 	int r = src.rows;
@@ -277,7 +280,7 @@ int FIMG::method_group::Max_Entropy(cv::Mat& src, cv::Mat& dst, int thresh /*= 0
 				continue;
 			Graynum[ptr[j]]++;
 		}
-	}
+	}//统计灰度值
 
 	float probability = 0.0; //概率
 	float max_Entropy = 0.0; //最大熵
@@ -318,24 +321,20 @@ int FIMG::method_group::Max_Entropy(cv::Mat& src, cv::Mat& dst, int thresh /*= 0
 	//阈值处理
 	src.copyTo(dst);
 
-	//应用于无目标或者目标渐隐的情况（但针对红外目标亮背景下，失效
-	if (thresh < 100)
-	{
-		threshold(dst, dst, 100, 255, cv::THRESH_BINARY);
-	}
-	else
-	{
-		for (int i = 0; i < r; ++i) {
-			uchar* ptr = dst.ptr<uchar>(i);
-			for (int j = 0; j < c; ++j) {
-				if (ptr[j] > thresh)
-					ptr[j] = 255;
-				else
-					ptr[j] = 0;
-			}
+	for (int i = 0; i < r; ++i) {
+		uchar* ptr = dst.ptr<uchar>(i);
+		for (int j = 0; j < c; ++j) {
+			if (ptr[j] > thresh)
+				ptr[j] = 255;
+			else
+				ptr[j] = 0;
 		}
 	}
+	
 
+	//
+	cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(filter_size, filter_size));
+	morphologyEx(dst, dst, cv::MORPH_CLOSE, element);
 
 	return thresh;
 }
@@ -626,18 +625,25 @@ void FIMG::method_group::listFiles(string dir, vector<string>& files, string str
 	_findclose(handle);    // 关闭搜索句柄
 }
 
-cv::Mat FIMG::method_group::All_Images_inWindow(vector<cv::Mat> vct_img)
+cv::Mat FIMG::method_group::All_Images_inWindow(vector<cv::Mat> vct_img, int w_n, int h_n)
 {
+
 	int w = vct_img[0].cols;
 	int h = vct_img[0].rows;
-	cv::Mat result = cv::Mat::zeros(cv::Size(2 * w, 2 * h), vct_img[0].type());
+	cv::Mat result = cv::Mat::zeros(cv::Size(w_n * w, h_n * h), vct_img[0].type());
 	cv::Rect box(0, 0, w, h);
-	for (int i = 0; i < 4; i++) {
-		int row = i / 2;
-		int col = i % 2;
+
+	for (int i = 0; i < w_n * h_n; i++) 
+	{
+		int row = i / w_n;
+		int col = i % w_n;
 		box.x = w * col;
-		box.y = h * row;
-		vct_img[i].copyTo(result(box));
+		box.y = h * row;	
+		if (vct_img.size() > i)
+		{
+			vct_img[i].copyTo(result(box));
+		}
+
 	}
 	return result;
 }

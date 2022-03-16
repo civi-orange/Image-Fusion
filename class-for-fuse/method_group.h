@@ -41,7 +41,7 @@ public:
 	cv::Mat GuidedFilter(cv::Mat& input, cv::Mat& guidImg, int r, double eps);
 
 	//最大熵分割算法--图像二值化
-	int Max_Entropy(cv::Mat& src, cv::Mat& dst, int thresh = 0, int p = 10);
+	int Max_Entropy(cv::Mat& src, cv::Mat& dst, int p = 10, int filter_size = 3);
 
 	//平均灰度自适应gamma校正
 	int Adjust_gamma(cv::Mat& src, cv::Mat& dst, float gamma = 1.0);
@@ -73,7 +73,7 @@ public:
 	//文件类型 列表获取，仅适用于Windows,Linux 请注释
 	void listFiles(string dir, vector<string>& files, string str_img_type);
 
-	cv::Mat All_Images_inWindow(vector<cv::Mat> vct_img);
+	cv::Mat All_Images_inWindow(vector<cv::Mat> vct_img, int w_n = 2, int h_n = 2);
 
 	void saveIndex2Txt(FIMG::fusion_image_index, string path = "");
 
